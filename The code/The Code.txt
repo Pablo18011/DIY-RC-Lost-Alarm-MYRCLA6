@@ -1,0 +1,256 @@
+/*  -----------------------------------
+      My version of a lost rc locator
+    -----------------------------------                  
+                                                         
+    A lost model alarm to put the odds                                             In sleep mode this will only use 1μA or >...!
+    of recovery in your favour.....
+
+    created 2020
+    by Paul McGee (Pablo 18011) https://www.youtube.com/user/pablo18011
+
+                           ATMEL ATTINY 85
+
+                                 +-\/-+                              .......................SOS NO DELAY VERSION....................................
+    Sleep pin  Ain0  (D 5) PB5  1|    |8  Vcc
+    ChargeEnableAin3 (D 3) PB3  2|    |7  PB2 (D 2) Ain1 Wake pin
+    Buzzer o/p Ain2 ( D 4) PB4  3|    |6  PB1 (D 1) pwm1 FC Buzz Signal
+                           GND  4|    |5  PB0 (D 0) pwm0 MainBatStatus
+                                 +----+
+
+*/
+
+#include <avr/power.h>              // Power management this is needed as readVcc does not work if ADC power_all_enable () is not used after wake from sleep.
+#include <avr/interrupt.h>          // Used to wake up when lipo attached to quad.
+#include <avr/sleep.h>              // Used to sleep and reduce power(this is the default state of MYRCLA).
+
+const int resetPin  = 5;           //  Reset pin to cancel alarm and then goes back to sleep (default state is always asleep).
+const int wakePin  = 2;            //  Ip for wake from sleep (interupt low ,use transitor on 5v from FC.)
+const int buzzIn = 1;              //  Bz Input from flight controller.
+const int bz_mode = 1;             //  ****** Buzzer mode****** default = 1 > digital from flight controller  or 2 > PWM signal from a receiver ....( change as needed).....
+const int led = 4;                 //  The led and buzzer is attached to pin 4.
+const int stIn = 0;                //  The status of vcc from fc 5v is pin 0.
+const int chargeEnable = 3;       //   Op to CE charge enable (high).
+const unsigned long eventInterval = 60000;  // This gives a 1 minute approx delay for int lipo charging (stops flicker charge led when full).
+unsigned long previousTime = 0;
+int stInValue = 0;                //  Value store fc 5v.
+int buzzInValue = 0;              //  Value store for BZ ip from fc.
+long int batteryLevel = 0;        //  This starts the batteryLevel value to zero.
+// message is SOS........................................................................................................... //Thanks Grumpy_Mike..!
+int message[] = {1, 1, 1, 3, 2, 2, 2, 3, 1, 1, 1, 4}; // dot = 1, dash = 2, inter letter space = 3, inter word space = 4
+int messageLength = 12; // Length of the dots, dashes, and spaces info
+int messagePointer = 0;
+unsigned long interval = 300; // mS per morse unit time
+unsigned long workingInterval = 0;
+unsigned long stateTime = 0;
+boolean generatingMessage = false;
+//.........................................................................................................................
+
+
+void setup() {
+  pinMode(resetPin, INPUT_PULLUP);  //  Sets reset pin to high( active low when button pushed).
+  pinMode(wakePin, INPUT_PULLUP);   //  Sets pin wake up (only active when low).
+  pinMode(buzzIn, INPUT_PULLUP);    //  BZ in ip from fc.
+  pinMode(led, OUTPUT);             //  Op is led and buzzer.
+  pinMode(stIn, INPUT);             //  Rx or fc 5v is input pulled down by 18k resistor.
+  pinMode(chargeEnable, OUTPUT);    //  CE enable charge TP4056 not sure if this should be pulled down to GND via a resistor? ,however it still works.....
+
+  digitalWrite(chargeEnable, LOW);  // CE disabled on power up.
+  delay(500);
+  digitalWrite(led, HIGH);          // Initial start up beeps and led flash (armed).
+  delay(50);
+  digitalWrite(led, LOW);
+  delay(50);
+  digitalWrite(led, HIGH);
+  delay(50);
+  digitalWrite(led, LOW);
+  delay(50);
+  digitalWrite(led, HIGH);
+  delay(50);
+  digitalWrite(led, LOW);
+  delay(2000);                      // 2 second delay to allow for 5v from fc.
+
+  if (stInValue == LOW); {          // When battery is first soldered to pcb or reset is pressed attiny 85 sleeps unless interupted (wake).
+    sleepNow();                     // In sleep mode this will only use 1μA.....!
+  }
+  batteryLevel = readVcc();         // This provides battery level indication ,1 2 and 3 beeps ,battery level <3.9v ,>3.9v to 4.1v< and >4.1v....
+  if (batteryLevel < 3900) {        // 1 x beeps indicates low battery <3900mV ,note all these values are approximate as the reading are not linear.
+    digitalWrite(led, HIGH);
+    delay(150);
+    digitalWrite(led, LOW);
+    delay(250);
+  }
+  else if (batteryLevel >= 3900 && batteryLevel < 4100) {  // 2 x beeps indicates low battery >3900 to 4100mV<...
+    digitalWrite(led, HIGH);
+    delay(150);
+    digitalWrite(led, LOW);
+    delay(250);
+    digitalWrite(led, HIGH);
+    delay(150);
+    digitalWrite(led, LOW);
+    delay(250);
+  }
+  else if (batteryLevel >= 4100) {                     // 3 x beeps indicates full battery >4100mV.
+    digitalWrite(led, HIGH);
+    delay(150);
+    digitalWrite(led, LOW);
+    delay(250);
+    digitalWrite(led, HIGH);
+    delay(150);
+    digitalWrite(led, LOW);
+    delay(250);
+    digitalWrite(led, HIGH);
+    delay(150);
+    digitalWrite(led, LOW);
+    delay(250);
+  }
+}
+
+void sleepNow() {
+  set_sleep_mode(SLEEP_MODE_PWR_DOWN);      // Sleep mode is set here.
+  ADCSRA &= ~ (1 << ADEN);                  // Turn off ADC this circuit will now consume 1μ Amp!
+  power_all_disable ();                     // Power off ADC, Timer 0 and 1, serial interface.
+  sleep_enable();                           // Enables the sleep bit in the mcucr register so sleep is possible.
+  attachInterrupt(0, wakeUpNow, LOW);       // Use interrupt  (pin 2) and run function wakeUpNow when pin 2 gets LOW.
+
+  sleep_mode();                             // Here the device is actually put to sleep!!
+
+  sleep_disable();                          // First thing after waking from sleep: disable sleep...
+  power_all_enable ();                      // Power everything back on.
+  ADCSRA |= (1 << ADEN);                    // Turn on ADC.
+  detachInterrupt(0);                       // Disables interrupton pin 2 so the wakeUpNow code will not be executed during normal running time.
+}                                           
+void wakeUpNow() {
+  digitalWrite(wakePin, HIGH);              // keeps ATtiny awake ,execute code here after wake-up before returning to the loop() function ,timers and code using timers (serial.print and more...) will not work here.
+}
+void loop() {
+  if (bz_mode == 1)
+    if (generatingMessage) {                // Continue to send message.
+      if (millis() - stateTime > workingInterval) updateMessage();
+    }
+    else { // see if we should send a message
+      if (digitalRead(stIn) == LOW) {       // || digitalRead(buzzIn) == LOW) { (this is to combine both, not using a delay before SOS ,else you have to create a seperate "if"for bz.
+        delay(5000);                        // Yes I know delay ,but in this case its the simplest option and a pause at this stage in the loop is not critical.     
+        generatingMessage = true;
+        workingInterval = 0;
+      }
+    }
+  if (bz_mode == 1)
+    if (digitalRead(buzzIn) == HIGH && digitalRead(stIn) == HIGH) { //This is for using Betaflight bzz mode so MYRCLA buzzer acts as a normal buzzer attached to FC.
+      digitalWrite(led, LOW);                                     //When activated by switch or beeper modes set in BF there will be no difference (so you take your buzzer of your FC!).
+    }
+  if (bz_mode == 1)
+    if (digitalRead(buzzIn) == LOW) {
+      digitalWrite(led, HIGH);
+    }
+  if (bz_mode == 1)                                            //I added this bit of code so I can stop the sos immediately.
+    if (digitalRead(stIn) && digitalRead(buzzIn) == HIGH) {    //Lipo battery connected and BF Buzz o/p high no SOS generated.
+      generatingMessage = false;          //Unlike delay this will allow other parts of the code to run at the same time and
+      digitalWrite(led, LOW);             //MYRCL6 sos to stop as soon as the battery is connected....!
+    }
+  if (bz_mode == 2)                                         // If you use this mode for a PWM reciever ,buzzer mode will play SOS ,not a BF buzz sound.
+    if (generatingMessage) { // continue to send message
+      if (millis() - stateTime > workingInterval) updateMessage();
+    }
+    else { // see if we should send a message  //Lipo battery disconnected or RX switch for buzzer high, enable SOS......
+      if (digitalRead(stIn) == LOW) {    //|| pulseIn(buzzIn, HIGH) >= 1200) { this is to combine both, not using a delay before SOS ,else you have to create a seperate "if"for bz.
+        delay(5000);                     // Yes I know delay ,but in this case its the simplest option and a pause at this stage in the loop is not critical.
+        generatingMessage = true;
+        workingInterval = 0;
+      }
+    }
+  if (bz_mode == 2)
+    if (pulseIn(buzzIn, HIGH) >= 1200) {   //Pulse length break point considered higher than high to trigger SOS.
+      generatingMessage = true;
+      // workingInterval = 0;               // Had to remove to get SOS ,otherwise you just get low bz... when not combined in one statement...
+    }
+  if (bz_mode == 2)
+    if (digitalRead(stIn) == HIGH && pulseIn(buzzIn, HIGH) < 1200) {      //This only works when high? Its because output is always 1000 so muust be always considered high?
+      generatingMessage = false;          //Unlike delay this will allow other parts of the code to run at the same time and
+      digitalWrite(led, LOW);             //MYRCL6 sos to stop as soon as the battery is connected....!
+    }
+  unsigned long currentTime = millis();                // This is a millis delay of 60 secs approx, this stops  (CE charge light flicker),charge CE off and on every 60secs when full.
+  if (currentTime - previousTime >= eventInterval) {  // This is a millis delay.
+    previousTime = currentTime;                       //Reset time millis delay.
+    batteryLevel = readVcc();                         // Turns readVcc to batteryLevel
+  }
+  if (batteryLevel <= 4100) {                         // Battery is less than 4100mV, charge battery.You will have to change this value for each ATiny 85 you use depending on tolerance and actual 1.1V Ref.
+    digitalWrite(chargeEnable, HIGH);                 // Start charging the battery.
+  }
+  else {
+    digitalWrite(chargeEnable, LOW);                 // Battery at or over 4100mV do not charge.Its better to have the lipo set so full charge just over 4.1V actual.
+  }                                                  // This will increase the battery life and 4.1V will allow for 12hrs S.O.S!
+}
+void updateMessage() {
+  // Set up time to next call of this function
+  if (message[messagePointer] == 1) workingInterval = interval;
+  if (message[messagePointer] == 2) workingInterval = interval * 3;
+  if (message[messagePointer] == 3) workingInterval = interval * 3;
+  if (message[messagePointer] == 4) workingInterval = interval * 7;
+  stateTime = millis();
+  // toggle output
+  if (message[messagePointer] == 1 || message[messagePointer] == 2) {
+    if (digitalRead(led) == LOW) {
+      digitalWrite(led, HIGH);
+    }
+    else {
+      digitalWrite(led, LOW);
+      updatePointer();
+    }
+  }
+  else {
+    updatePointer();
+  }
+}
+void updatePointer() {
+  messagePointer++;
+  if (messagePointer >= messageLength) { // End of message
+    generatingMessage = true; //If true this loops sos
+    messagePointer = 0;
+  }
+}
+long readVcc() {
+  // Read 1.1V reference against AVcc
+  // set the reference to Vcc and the measurement to the internal 1.1V reference
+#if defined(__AVR_ATmega32U4__) || defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__)
+  ADMUX = _BV(REFS0) | _BV(MUX4) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1);
+#elif defined (__AVR_ATtiny24__) || defined(__AVR_ATtiny44__) || defined(__AVR_ATtiny84__)
+  ADMUX = _BV(MUX5) | _BV(MUX0);
+#elif defined (__AVR_ATtiny25__) || defined(__AVR_ATtiny45__) || defined(__AVR_ATtiny85__)
+  ADMUX = _BV(MUX3) | _BV(MUX2);
+#else
+  ADMUX = _BV(REFS0) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1);
+#endif
+
+  delay(2); // Wait for Vref to settle
+  ADCSRA |= _BV(ADSC); // Start conversion
+  while (bit_is_set(ADCSRA, ADSC)); // Measuring
+
+  uint8_t low  = ADCL; // Must read ADCL first - it then locks ADCH
+  uint8_t high = ADCH; // Unlocks both
+
+  long result = (high << 8) | low;
+
+  result = 1125300L / result; // Calculate Vcc (in mV); 1125300 = 1.1*1023*1000 
+  return result;          // Vcc in millivolts     
+}                                               
+/*
+Note this my findings after testing "The Secret Voltmeter Code"
+Changing the scale constant just does not work precisely enough for a range of measured voltages.(works really well if you just fudge the required measurements,see below). 
+The best way I have found is to just invidually change the lipo fully charged voltage value,
+by changing the "if (batteryLevel <= 4200){" to compensate for the differences in Vref on each chip,ie if the charge cuts off and the measured voltage 4100 then change
+if (batteryLevel <= 4200){ to if (batteryLevel <= 4300){  this will mean charge will stop when the battery reaches 4200mV...!
+The reason for this is the reaadvcc readings are not linear.The main one is charge enable just adjust this so the cut off is as close to 4.2v as you can get it
+don't worry too much as I did my continuous alarm test when the lipo baterry was at 4.1v this gave 12 hrs SOS...!
+the battery level beeps are just approx and you can adjust these the same way and use a multimeter to confirm actual voltage and what is indicated.
+A battery level of 4.1V actual full will increase the battery life.
+You can experiment either way and I have included the recommened way below.
+  1. Calculate internal1.1Ref = 1.1 * Vcc1 (per voltmeter) / Vcc2 (per readVcc() function)
+   Example ,mine was 4.96 v measured with multi meter therefore ,
+   1.1 * 5.03/4.96 (5.03v output from serial monitor) ,= 1.155241 v.
+   So this particular ATTiny 85 internal Ref is only 1.155241 v instead of 1.1 v.
+  2. Now find scale_constant internal 1.155241 * 1023 * 1000 = 1141181 .
+  3. Now put 1141181 into the "ATtiny 85 secret voltage reading" code ,this will now
+   compensate for the lower reading of ARef v .
+  4. This is the is the part of the code to change "result = 1125300L / result;"
+   becomes ""result = 1141181L / result;"
+*/
