@@ -1,0 +1,36 @@
+Detailed component list for PCB design.
+
+1 x Microchip ATTINY85-20SF, 8bit AVR Microcontroller,
+    ATTINY85, 20MHz, 8 kB Flash, 8-Pin SOIC 
+     Mfr. Part No. ATTINY85-20SF 
+
+1 x TP4056 PMIC - Battery Management SOP-8_EP_150mil 
+
+1 x MMBT2222 2N2222 SOT-23 SMD NPN Transistor
+
+1 x 330 ohm 0603 SMD Resistor
+
+2 x 1k 0603 SMD Resistor
+
+1 x 10k 0603 SMD Resistor
+
+3 x 18k 0603 SMD Resistor
+
+2 x 1 micro  farad 35v SMD capacitor 3.2 x 1.6 x 1.6mm Case A
+
+1 x WHITE LED 0805 SMD (Beacon) 
+
+1 x PURE GREEN LED 0603 SMD (Armed)
+
+1 x RED LED 0603 SMD (Charge)
+
+1 x CMI-9653S-SMT-TR SMD Buzzer 3v (range 2-5v) 75dB @ 3V, 10cm  (9.60mm x 9.60mm) possible Grey Surface Mount Buzzer, 9.7 mm Diameter, 3 8 V, 80dB at 1 Metre 
+                                                                                    RS Stock No. 179-7449 
+1 x PUSH SWITCH - TL3330AF130QG - SWITCH, TACTILE, SPST, 50mA, 12VDC
+
+1 x 3.7v 80 mAh Li Polymer battery 22 x 12 x 5mm
+
+1 x 45 x 30mm heat shrink clear
+
+3 x Silicone cables Red Black Yellow (80 mm approx)
+    28 AWG 1.1 to 1.2 mm OD
