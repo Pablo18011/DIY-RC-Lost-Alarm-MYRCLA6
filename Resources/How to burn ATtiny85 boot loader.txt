@@ -1,0 +1,7 @@
+Put ATtiny85 into my ISP programmer (pin 1 out).
+Open Arduino 1.8.5 .
+Open MRCLA6 Working INO .
+Go to tools ATtiny85 ,8MHZ ,choose port ,Arduino as ISP .
+Verify sketch first ,then tools ,burn bootloader (not connecting ,check port ,unplug/plug in usb) .
+
+Completed ,upload sketch......!

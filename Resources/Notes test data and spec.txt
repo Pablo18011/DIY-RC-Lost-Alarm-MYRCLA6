@@ -1,0 +1,88 @@
+Power consumption whilst connect to quad (or disconnected)
+is 0.88 µA...! ,so will last 1 year before dropping to storage voltage.(note have tested 2 and both used 100mV in 3 months!)
+
+My working prototype charges at 34 mAh approx connected to 5v from FC.
+So thats less than 0.5C charge rate for 80mAh 3.7V lipo .
+
+The 3.7V 80mAh lipo has built in circuit to disconnect lipo if voltage
+gets low ? I dont know what the threshold is ? I need to email supplier?
+Does not kick in at 3Vs...
+
+Power consumption in SOS mode peak 17mAh average 11mAh intermittent (using delay version)
+only when flashing and beeping, about the same when in buzeer mode ,
+this isnt as important as buzzer mode only works if main lipo is connected 
+to quad and then it will be charging the RCLA internal battery.
+
+
+V1 working.
+Dimensions L  x  W  x  D
+          30mm  15mm  13.5mm
+Weight 6gms
+ 
+Improvements reduce length to say 25 mm or 20 mm (if possible).
+Optimize code ,replace "delay" with "millis"
+Adjust some pads and hole sizes on PCB.
+
+Update full drain test results....
+Time Hrs       Voltage
+   0             4.135 (nearly fully charged)
+   1             3.964
+   2             3.896
+   3             3.850
+   4             3.795
+   5               ?
+   6             3.740 (So 6hrs in and still very loud ,also if fully charged)
+                        ( this could be 3.8v and standard for storage voltage)
+   7             3.665
+   8               ?
+   9             3.399
+   10              ?
+   11            3.3 
+   12              ?   Stopped working as it just dropped below 3.3V - 3.0V it looked like no current was being drawn
+                         as the lipo recovered back up to 2.9V and beeped once then dropped back again to
+                         below 2.9V .so near enough completey drained to where any further and TP4056 would 
+                         not trickled charge to recover , cut off is 2.8 ,2.9V ...
+                         I left battery disconnected and it recoverd back to just over I think 3.2V ?
+                         and connected 5V line the Tp 4056 recharged the lipo .
+Conclusion from test
+
+With out modifying my code and with a nearly full  3.7V 80mAh(4.1V) lipo, you get 6 hrs full SOS sound and light flash ,down to storage voltage 3.8V.
+10 to 12 hrs until lipo drops below 3v and below supply votage off ATtiny 85 and switches off.
+So there is no real need for me to alter code as cut of voltage is just above the point were the lipo is not recoverable. 
+Also the fact that the lipo battery has discharge prevention circuit does not kick in so must be set to below 3.0V...?
+So as a one off ,you loose your drone and find it 12 hrs later ,the MYRCLA6 should recover and charge the lipo at trickle charge then normal
+charge back up to 4.2V or as close as the internal voltage ref of the ATtiny 85 has been calibrated too.......
+For safety, just replace the lipo battery with a new one!
+
+Update 13 3 20 ......
+
+JCL PCB arrived V1.3 ,built and working! I found what was causing the drain on V1 version.
+The 1 micro capacitors are polarized and by pure fluke I got them the right way round on V1 but not on V2!
+So if you get slow steady creep up of current drain ,check your capacitors!
+Also tests for prog resistor of 10k is caharging at 66 to 70 mAh when lipo is at 3.8V then drops to 21 mAh over 4.1V.
+Not as per data sheet 130 micro amps? not sure why.....(it was this high only when the capacitors were the wrong way around....?
+Re tested above on V2 protype with non protected lipo no change in sleep current close to 1 micro amp.
+Also tesed charge current when lipo is at 3.8V and charge current starts at 116 mAh so close to the 130 of spec and this drops as lipo bat increases.
+So initial charge is close to 2c when lipo is empty but quickly tapers off .Most of the time the MYRCLA will be just topping off the lipo therefore not
+at 2c in normal operation.I will swap 10k prog resistor for 18k and test ( 18k closed to 20k SMD I have) to half initial charge to 1c.....
+Tested Prog resistor now 18k with lipo at 3.8v charge current is 62 mAh so will test charge a lipo and note drop when over 4.1V...
+Tested lipo at 4.0V charge starts at 34mAh and slowly drops as lipo bat voltage increases..
+,so this look like the right choice so need to change schematic.
+Problem it now does not stop charge? just seems to stay on trickle light says on?
+Its not the circuit or fault as, tried same charge full bat on bread board set up ,only difference is Vref compesation in code so this maybe now causing
+the issue with a lower charge current...? I need to experiment on bb set up with diiferent Vref compensation values and Ce cut off voltage.
+
+Update 31 4 20 ......
+Now added code to beep internal lipo bat voltage when quad battery is connected this provides battery level indication, 1 ,2 ,3 beeps ,battery level <3.9V ,>3.9V to 4.1V< and >4.1V.
+I have added a 60 secs delay when the internal lipo reaches full charge >= 4200 mV this is controlled by the correct value for A ref 1.1 voltage.
+The reason for the 60 sec delay is to stop the charge led from pulsing and never switching off.
+You can decide how close to 4200 mV you want get, example my prototype pcb ATtiny 85 correction value I have left as the default 1125300L ,this results
+in the int lipo led charge light on and charges upto 4190 mV and will switch off and drain down to 4178 mV approx after 60 secs then start charging up again.
+Charging the lipo battery to say 4100mV full instead of 4200mV as the TP4056 it is programmed to, should increase the  life of the lipo battery?
+If the models battery disconnects the alarm will sound and the int lipo will start to drain until you attach the models battery again, press the reset or the
+internal lipo battery drains flat.
+Also I have PWM buzzer control mode as an option, its works if you enable it in the code and works with a value > 1200 micro sec pulse .....try over 1500 micro sec on TX switch.
+I have tested this function and it works a FlySky FS-iA6B Receiver.
+
+   
+

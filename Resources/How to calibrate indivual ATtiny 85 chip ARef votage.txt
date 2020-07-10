@@ -1,0 +1,32 @@
+1. Load "Software_Serial_Attiny_85_Aref_readprint" ino onto ATtiny 85.
+2. Load "Arduino_uno_read_Aref_and_print" ino onto a Adruino Uno.  
+3. Connect ATtny 85 Vcc GND Chip pin 3 TX to Arduino Uno ARef pin plus GND.
+4. Start Arduino Uno "Arduino_uno_read_Aref_and_print" and open "serial  monitor".
+   This will now print out Vcc read from the ATtinhy 85 and sent via soft serial to
+   The Arduino Uno.In an ideal world this would be the same as what you would measure
+   on pin 3 and GND  on the ATtiny 85 with a multi meter ,however due to slight differences
+   in each ATtiny 85 Ref voltage they are not always 1.1v .
+5. Calculate internal1.1Ref = 1.1 * Vcc1 (per voltmeter) / Vcc2 (per readVcc() function)
+   Example ,mine was 4.96 v measured with multi meter therefore ,
+   1.1 * 5.03/4.96 (5.03v output from serial monitor) ,= 1.155241 v.
+   So this particular ATTiny 85 internal Ref is only 1.155241 v instead of 1.1 v.
+6. Now find scale_constant internal 1.155241 * 1023 * 1000 = 1141181 .
+7. Now put 1141181 into the "ATtiny 85 secret voltage reading" code ,this will now
+   compensate for the lower reading of ARef v .
+8. This is the is the part of the code to change "result = 1125300L / result;"
+   becomes ""result = 1141181L / result;"
+   code below is when ARef is 1.1v..........
+  " result = 1125300L / result; // Calculate Vcc (in mV); 1125300 = 1.1*1023*1000
+   return result; // Vcc in millivolts result = 1141181L / result; // Calculate Vcc (in mV); 1125300 = 1.1*1023*1000"
+   return result; // Vcc in millivolts
+
+scale_constant = internal1.1Ref * 1023 * 1000
+
+where
+
+internal1.1Ref = 1.1 * Vcc1 (per voltmeter) / Vcc2 (per readVcc() function)
+
+Update 4 4 20 this just not work for Aref constant difference even when I set Vcc to 4.2v then calcultaed the constant to take into account
+the difference in each chips Aref value 1.1v (ideal) but can be out by 10% better adjusting for main voltage you want use as a notification?
+or a charge termination point and alter the code to what the multi meter reads and leave the costant as default.
+this feature is far better used as a rough guide to say a battery level and not for a critical task................

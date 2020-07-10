@@ -1,0 +1,79 @@
+// ATtiny85 sleep mode, wake on pin change interrupt or watchdog timer
+// Author: Nick Gammon
+// Date: 12 October 2013
+
+// ATMEL ATTINY 25/45/85 / ARDUINO
+//
+//                  +-\/-+
+// Ain0 (D 5) PB5  1|    |8  Vcc
+// Ain3 (D 3) PB3  2|    |7  PB2 (D 2) Ain1
+// Ain2 (D 4) PB4  3|    |6  PB1 (D 1) pwm1
+//            GND  4|    |5  PB0 (D 0) pwm0
+//                  +----+
+
+#include <avr/sleep.h>    // Sleep Modes
+#include <avr/power.h>    // Power management
+#include <avr/wdt.h>      // Watchdog timer
+
+const byte LED = 3;  // pin 2
+const byte SWITCH = 4; // pin 3 / PCINT4
+
+ISR (PCINT0_vect) 
+ {
+ // do something interesting here
+ }  // end of PCINT0_vect
+ 
+// watchdog interrupt
+ISR (WDT_vect) 
+{
+   wdt_disable();  // disable watchdog
+}  // end of WDT_vect
+
+void resetWatchdog ()
+  {
+  // clear various "reset" flags
+  MCUSR = 0;     
+  // allow changes, disable reset, clear existing interrupt
+  WDTCR = bit (WDCE) | bit (WDE) | bit (WDIF);
+  // set interrupt mode and an interval (WDE must be changed from 1 to 0 here)
+  WDTCR = bit (WDIE) | bit (WDP3) | bit (WDP0);    // set WDIE, and 8 seconds delay
+  // pat the dog
+  wdt_reset();  
+  }  // end of resetWatchdog
+  
+void setup ()
+  {
+  resetWatchdog ();  // do this first in case WDT fires
+  
+  pinMode (LED, OUTPUT);
+  pinMode (SWITCH, INPUT);
+  digitalWrite (SWITCH, HIGH);  // internal pull-up
+  
+  // pin change interrupt (example for D4)
+  PCMSK  = bit (PCINT4);  // want pin D4 / pin 3
+  GIFR  |= bit (PCIF);    // clear any outstanding interrupts
+  GIMSK |= bit (PCIE);    // enable pin change interrupts 
+  }  // end of setup
+
+void loop ()
+  {
+  digitalWrite (LED, HIGH);
+  delay (500); 
+  digitalWrite (LED, LOW);
+  delay (500); 
+  goToSleep ();
+  }  // end of loop
+  
+void goToSleep ()
+  {
+  set_sleep_mode (SLEEP_MODE_PWR_DOWN);
+  ADCSRA = 0;            // turn off ADC
+  power_all_disable ();  // power off ADC, Timer 0 and 1, serial interface
+  noInterrupts ();       // timed sequence coming up
+  resetWatchdog ();      // get watchdog ready
+  sleep_enable ();       // ready to sleep
+  interrupts ();         // interrupts are required now
+  sleep_cpu ();          // sleep                
+  sleep_disable ();      // precaution
+  power_all_enable ();   // power everything back on
+  }  // end of goToSleep 

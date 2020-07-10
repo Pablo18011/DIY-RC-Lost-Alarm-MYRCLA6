@@ -1,0 +1,91 @@
+Three Ways To Read A PWM Signal With Arduino
+
+PWM (Pulse-Width Modulation) is a modulation technique that controls the width of the pulse based on modulator signal information. PWM can be used to encode information for transmission or to control of the power supplied to electrical devices such as motors.
+
+Generating a PWM signal with an Arduino is quite easy. There is significantly less documentation on how best to read a PWM signal. I needed to read the receiver signals for a remote controlled Quadcopter and after doing some research, I discovered three methods of reading a PWM signal with an Arduino.
+The Gist
+
+PWM works by varying the width of the on signal (read Duty Cycle) within a fixed signal frequency or period of time. So what we are really looking for is the length of time the signal remains high for each cycle. There are several ways to do this. The easiest is using the pulseIn function as shown below.
+1. The pulseIn() Function
+
+The pulseIn() waits for the pin to go HIGH, starts timing, then waits for the pin to go LOW and stops timing. Returns the length of the pulse in microseconds.
+The pulseIn Function
+byte PWM_PIN = 3;
+ 
+int pwm_value;
+ 
+void setup() {
+  pinMode(PWM_PIN, INPUT);
+  Serial.begin(115200);
+}
+ 
+void loop() {
+  pwm_value = pulseIn(PWM_PIN, HIGH);
+  Serial.println(pwm_value);
+}
+2. External Interrupts
+
+The pulseIn function works well and is really simple. However, the downside is that the processor cannot be used while it is waiting for the pin to go low. This is not a very efficient use of our CPU cycles. We can improve this by using an event-driven interrupt system to handle the measurement of the PWM signal. Arduino provides the attachInterrupt function to do just this.
+
+Most Arduino boards have two external interrupts: numbers 0 (on digital pin 2) and 1 (on digital pin 3).  These interrupts can be set to trigger on RISING or FALLING signal edges, or on low level. Once attached, when an interrupt is triggered, the specified interrupt service routine (ISR) will be called.
+
+Note the use of volatile variables in this sketch. The Arduino docs state: A variable should be declared volatile whenever its value can be changed by something beyond the control of the code section in which it appears, such as a concurrently executing thread. In the Arduino, the only place that this is likely to occur is in sections of code associated with interrupts, called an interrupt service routine.
+External Interrupts
+volatile int pwm_value = 0;
+volatile int prev_time = 0;
+ 
+void setup() {
+  Serial.begin(115200);
+  // when pin D2 goes high, call the rising function
+  attachInterrupt(0, rising, RISING);
+}
+ 
+void loop() { }
+ 
+void rising() {
+  attachInterrupt(0, falling, FALLING);
+  prev_time = micros();
+}
+ 
+void falling() {
+  attachInterrupt(0, rising, RISING);
+  pwm_value = micros()-prev_time;
+  Serial.println(pwm_value);
+}
+3. Pin Change Interrupts
+
+Using attachInterrupt allows for greater efficiency but now we are forced to use pins 2 and 3 to read the PWM values and we are limited in the number of interrupts we can specify. If we would like to trigger an interrupt on another pin, we need to use Pin Change Interrupts.
+
+Pin Change Interrupts can be enabled on any of the Arduinos signal pins. The pin change interrupts are grouped into 3 ports on the MCU. This means there are only 3 interrupt subroutines for all 20 pins. This means the subroutine will need to be more complicated as it now needs to determine which pin triggered the interrupt.
+
+You can configure this manually but the PinChangeInt library makes it very quick and simple.
+Pin Change Interrupts
+#include <PinChangeInt.h>
+ 
+#define MY_PIN 5 // we could choose any pin
+ 
+volatile int pwm_value = 0;
+volatile int prev_time = 0;
+uint8_t latest_interrupted_pin;
+ 
+void rising()
+{
+  latest_interrupted_pin=PCintPort::arduinoPin;
+  PCintPort::attachInterrupt(latest_interrupted_pin, &falling, FALLING);
+  prev_time = micros();
+}
+ 
+void falling() {
+  latest_interrupted_pin=PCintPort::arduinoPin;
+  PCintPort::attachInterrupt(latest_interrupted_pin, &rising, RISING);
+  pwm_value = micros()-prev_time;
+  Serial.println(state);
+}
+ 
+void setup() {
+  pinMode(MY_PIN, INPUT); digitalWrite(MY_PIN, HIGH);
+  Serial.begin(115200);
+  PCintPort::attachInterrupt(MY_PIN, &rising, RISING);
+}
+ 
+void loop() { }

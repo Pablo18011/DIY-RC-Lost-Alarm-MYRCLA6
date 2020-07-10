@@ -1,0 +1,57 @@
+Ebay     zengtrader
+5pcs 3.7V 80 mAh Li Polymer £8.35
+
+= Model (size) : 501220
+
+= Li battery size : Thickness 5 mm x Width 12 mm x Length 20 mm
+
+= Nominal Voltage : 3.7V
+
+= Capacity : DC 3.7v 80 mAh
+
+= Discharging rate : 1C
+
+= Initial impedance :Approx 65 mΩ
+
+= Approx Weight : 3 g
+
+= Cycle life : 800 cycles 
+
+Electrical characteristics：
+ 
+
+1.Standard Charging method ：0.5C （constant current）charge to 4.2V,then CV(constant voltage 4.2V)charge till charge current decline to ≤0.05C
+
+2. Rated Capacity ： The capacity means the discharge capacity of the cell, which is measured with discharge current of 0.2C with 3.0V cut-off voltage after standard charge.
+
+
+3. Charging time ：Standard Charging：3.0 hours(Ref.) ，Rapid charge： 2.0 hours(Ref.)
+
+
+4. Operating temperature ：Charging： -20℃~60℃ Discharging：-20℃~60℃
+
+
+5. Storage temperature ： -10℃~ +45℃
+
+
+6. Test condition：
+Charge:0.5C to 4.2V
+Discharge:0.2C to 3.0V
+70% or more of 1st cycle capacity at 0.2C discharge of Operation
+Self-discharge ：Residual capacity >90%
+After the standard charging, storied the cells under the condition for 30 days, then measured the capacity with 0.2C till 3.0V
+
+
+7：Temperature characteristics ：
+-20℃: ≥65%
+23℃: 100%
+60℃: ≥96%
+---- According to item at 23±5℃.
+---- Capacity comparison at each temperature, measured with constant discharge current 0.2C with 3.0V cut-off. Percentage as an index of the capacity compared with 100% at 23℃
+
+
+8 ： Mechanical characteristics:
+----- Vibration Test : No leakage / No fire
+After standard charging, fixed the cell to vibration table and subjected to vibration cycling that the frequency is to be varied at the rate of 1Hz per minute between 10Hz an 55Hz,the excursion of the vibration is 1.6mm.The cell shall be vibrated for 30 minutes per axis of XYZ axes.
+----- Drop Test : No fire/ no leakage.
+The cell is to be dropped from a height of meter twice onto concrete ground.
