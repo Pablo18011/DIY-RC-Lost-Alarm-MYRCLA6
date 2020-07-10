@@ -22,7 +22,7 @@ buzzer and LED used for location, 3.7V 80 mAh lipo battery.
 
 ## Description and Operation
 
-[MYRCLA6](https://www.youtube.com/watch?v=zmA0Cy9UIdk&feature=youtu.be) is a small self-powered RC lost alarm location device (25x15mm 6 grams)
+[MYRCLA6](https://www.youtube.com/watch?v=A2OlpAuxzVI&feature=youtu.be) is a small self-powered RC lost alarm location device (25x15mm 6 grams)
 that can help you locate your lost Quadcopter/Plane, either by a configured buzzer switch
 on a TX or if the main battery is disconnected a continuous S.O.S alarm.
 There is no on/off switch as MYRCLA6 is in lower power mode (sleep) by default.
