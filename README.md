@@ -57,6 +57,16 @@ You may be able to order just using Y1-2929585A PCB order number printed on the 
 
 ![](Images/MYRCLA6FPCBC.png)
 
+## UPDATE   V 1.5 PCB
+I have changed the original PCB To have a 2nd reset tactile push switch and a 3 pin standard FPV MOLEX PicoBlade SMD connector.
+These design changes allow for a MYRCLA6 to be easily moved to other models and to make it safer to install on your FC.
+The connector and cable are a standard PicoBlade 1.25mm pitch used on FPV cameras and cable colour code is the same.
+You still have the option to direct solder cables as for V 1.4.
+
+![alt](Images/MYRCLA6V1.5FPCB.png) | ![alt](Images/MRCLA6V1.5RPCB.png)
+
+
+
 ## Components
 
 All components are SMD, ICs [ATtiny 85](https://uk.rs-online.com/web/p/microcontrollers/1331674/) and [TP4056](https://www.ebay.co.uk/itm/P4056-4-2V-3A-High-Current-Lithium-Battery-Charging-Board-Charger-Module/152989287050?hash=item239edf428a:g:bs8AAOSwLRla2H-Y), LEDs, resistors and capacitors are 0603 and 0805 size. I used a soldering iron and a magnifier to build mine, but you could use a stencil and solder paste. I have included a list; the capacitor values are not that critical. I oversized some of the pads in the PCB circuit design to have flexibility for the chosen components, like LS1 buzzer size can vary by a few mm and still fit, if you can’t find the same one as I used.
