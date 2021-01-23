@@ -28,9 +28,15 @@ Detailed component list for PCB design.
                                                                                     RS Stock No. 179-7449 
 1 x PUSH SWITCH - TL3330AF130QG - SWITCH, TACTILE, SPST, 50mA, 12VDC
 
+1 x 3mm Tactile Push Button Switch 3x4x2mm 2pin SPST, 50mA, 12VDC
+
+1 x MOLEX PicoBlade connector 3pin 1.25mm pitch 57061-0371 532610371
+
 1 x 3.7v 80 mAh Li Polymer battery 22 x 12 x 5mm
 
 1 x 45 x 30mm heat shrink clear
+
+1 x 1.25mm 3pin Silicone cable FPV MOLEX PicoBlade 15cm
 
 3 x Silicone cables Red Black Yellow (80 mm approx)
     28 AWG 1.1 to 1.2 mm OD
