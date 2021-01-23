@@ -57,9 +57,9 @@ You may be able to order just using Y1-2929585A PCB order number printed on the 
 
 ![](Images/MYRCLA6FPCBC.png)
 
-## UPDATE V 1.5 PCB
+## UPDATE  V 1.5 PCB
 I have changed the original PCB To have a 2nd reset tactile push switch and a 3 pin standard FPV MOLEX PicoBlade SMD connector.
-These design changes allows for a MYRCLA6 to be easily moved to other models and to make it safer to install on your FC.
+These design changes allow for a MYRCLA6 to be easily moved to other models and to make it safer to install on your FC.
 The connector and cable is a standard PicoBlade 1.25mm pitch used on FPV cameras and cable colour code is the same.
 You still have the option to direct solder cables as for V 1.4.
 
